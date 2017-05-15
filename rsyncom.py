@@ -40,9 +40,10 @@ def header(title, des):
     print("Destination:", des)
     print("Start time:", time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
 
-def callcmd(cmd, inpath, outpath, args):
-    subprocess.call(list((cmd, inpath, outpath, *args)))
-    #print(list(flatten((cmd, inpath, outpath, args))))
+def callcmd(cmd, inpath, outpath):
+    def addmoreopt(*special):
+        return subprocess.call(list((cmd, inpath, outpath, *special)))
+    return addmoreopt
 
 def main():
     parser = argparse.ArgumentParser(description='Backup made easy with rsync')
@@ -72,14 +73,15 @@ def main():
         "/home/.cache/chromium/*",
     )
 
-    opt_full = (general_full(), info("progress2"), exclude(genpath(exclude_path)))
-    opt_dest = (general_dest(), info("progress2")) # path inpath_full = "/"
     inpath_full = "/"
     tool = "rsync"
 
-    backup_full = lambda path: callcmd(tool, inpath_full, path, opt_full)
+    def exclude_multi(*paths):
+        return exclude(genpath(paths))
+
+    backup_full = lambda path: callcmd(tool, inpath_full, path)(general_full(), info("progress2"), exclude_multi(path, *exclude_path))
     def backup_dest(inpath, outpath):
-        return callcmd(tool, inpath, outpath, opt_dest)
+        return callcmd(tool, inpath, outpath)(general_dest(), info("progress2"), exclude_multi(outpath, *exclude_path))
 
     if args.path is None and args.paths:
     # not -f, but -d, backup specific paths
@@ -90,7 +92,7 @@ def main():
             backup_dest(inpath, outpath)
     elif args.path is not None and not args.paths:
     # -f, but not -d, full backup
-        outpath = backup_path(args.path)
+        outpath = backup_path(args.path[0])
         make_folder(outpath)
         header("Full system backup", outpath)
         backup_full(outpath)
