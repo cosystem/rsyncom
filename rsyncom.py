@@ -42,7 +42,8 @@ def header(title, des):
 
 def callcmd(cmd, inpath, outpath):
     def addmoreopt(*special):
-        return subprocess.call(list((cmd, inpath, outpath, *special)))
+        subprocess.call(list((cmd, inpath, outpath, *special)))
+        #print(list((cmd, inpath, outpath, *special)))
     return addmoreopt
 
 def main():
@@ -54,23 +55,30 @@ def main():
     args = parser.parse_args()
 
     # options
-    general_full = option("aAX", "short")
+    general_full = option("aAXv", "short")
     general_dest = option("az", "short")
     info = option("info", "long")
     exclude = option("exclude", "long")
 
     exclude_path = (
-	"/dev/*",
-	"/proc/*",
-        "/sys/*",
-        "/tmp/*",
-        "/run/*",
-        "/mnt/*",
-        "/media/*",
+	"/dev",
+	"/proc",
+        "/sys",
+        "/tmp",
+        "/run",
+        "/mnt",
+        "/media",
         "/lost+found",
-        "/home/.local/share/Trash/*",
-        "/home/.thumbnails/*",
-        "/home/.cache/chromium/*",
+        "/home",
+        #"/home/.local/share/Trash*",
+        #"/home/.thumbnails/*",
+        #"/home/.cache/chromium/*",
+        "/usr",
+        "/proc",
+        "/var",
+        "/bin",
+        "/etc",
+        "/boot"
     )
 
     inpath_full = "/"
@@ -79,7 +87,7 @@ def main():
     def exclude_multi(*paths):
         return exclude(genpath(paths))
 
-    backup_full = lambda path: callcmd(tool, inpath_full, path)(general_full(), info("progress2"), exclude_multi(path, *exclude_path))
+    backup_full = lambda path: callcmd(tool, inpath_full, path)(general_full(), exclude_multi(path, *exclude_path))
     def backup_dest(inpath, outpath):
         return callcmd(tool, inpath, outpath)(general_dest(), info("progress2"), exclude_multi(outpath, *exclude_path))
 
